@@ -49,6 +49,29 @@ namespace net35Events
         public double goalDistance;
     };
 
+    public class VehicleData
+    {
+        // Common data
+        public Guid sessionID;
+        public DateTime time;
+        public string vehicleID;
+        public double speed;
+        public double distance;
+        public int collision;
+        public int roundCount;
+        public int hitCount;
+        public int killCount;
+        public int deathCount;
+        public double positionX;
+        public double positionZ;
+
+        // Azure data only
+        public string recordType;
+        public string recordID;
+        public string utcTime;
+    }
+
+
     class Program
     {
         static void Main(string[] args)
@@ -97,12 +120,33 @@ namespace net35Events
                     aggShot = 2
                 };
 
+                var newGuid = Guid.NewGuid();
+
+                var newEventData = new VehicleData
+                {
+                    collision = 0,
+                    deathCount = 0,
+                    distance = 1.0,
+                    hitCount = 4,
+                    killCount = 2,
+                    positionX = 1000.0,
+                    positionZ = 1200.0,
+                    recordID = "a record Id here",
+                    recordType = "scoring",
+                    roundCount = 10,
+                    sessionID = newGuid,
+                    speed = 5.0,
+                    time = DateTime.UtcNow,
+                    vehicleID = "REDONE",
+                    utcTime = DateTime.UtcNow.ToString("O")
+                };
+
                 var req = WebRequest.Create(uri);
                 req.Method = "POST";
                 req.Headers.Add("Authorization", sas);
                 req.ContentType = "application/atom+xml;type=entry;charset=utf-8";
 
-                string jsonString = JsonConvert.SerializeObject(eventData);
+                string jsonString = JsonConvert.SerializeObject(newEventData);
                 using (var writer = new StreamWriter(req.GetRequestStream()))
                 {
                     writer.Write(jsonString);
