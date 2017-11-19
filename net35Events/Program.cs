@@ -98,7 +98,7 @@ namespace net35Events
                 var eventData = new Sensor()
                 {
                     time = DateTime.UtcNow.ToString("O"),
-                    sessionStart = DateTime.UtcNow.AddHours(1.0).ToString("O"),
+                    sessionStart = DateTime.UtcNow.AddMinutes(-3.5).ToString("O"),
                     sessionEnd = DateTime.UtcNow.AddHours(1.0).ToString("O"),
                     stringState = "running",
                     dspl = deviceName,
