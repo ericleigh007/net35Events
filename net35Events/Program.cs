@@ -85,81 +85,96 @@ namespace net35Events
             var hubName = "raydontrainingdatahub-01";
             var deviceName = "device-01";
 
+            string[] vehicleNames = { "Red1", "Red2", "Blue1", "Blue2" };
+
             Console.WriteLine("Starting device: {0}", deviceName);
 
             var uri = new Uri(String.Format("https://{0}.servicebus.windows.net/{1}/publishers/{2}/messages", serviceNamespace, hubName, deviceName));
 
             String crewGUID = Guid.NewGuid().ToString();
             int count = 0;
+            Guid theSession = Guid.NewGuid();
+            int vehicleIndex = 0;
 
             // Keep sending.
             while (true)
             {
-                var eventData = new Sensor()
+                for (int i = 0; i < 4; i++)
                 {
-                    time = DateTime.UtcNow.ToString("O"),
-                    sessionStart = DateTime.UtcNow.AddMinutes(-3.5).ToString("O"),
-                    sessionEnd = DateTime.UtcNow.AddHours(1.0).ToString("O"),
-                    stringState = "running",
-                    dspl = deviceName,
-                    crewID = crewGUID,
-                    zero = 0,           // eventually, thees may be queries
-                    top_percent = 100,  // 
-                    temp = 1,
-                    hmdt = 20,
-                    heartRate = 100,
-                    runtimeSeconds = 10.0,
-                    distanceSinceGoal = 1.0,
-                    coll = 1,
-                    aggColl = 2,
-                    timeToShot = 1,
-                    timeToHit = 1,
-                    timeToKill = 1,
-                    timeToDied = 1,
-                    shot = 1,
-                    aggShot = 2
-                };
+                    var eventData = new Sensor()
+                    {
+                        time = DateTime.UtcNow.ToString("O"),
+                        sessionStart = DateTime.UtcNow.AddMinutes(-3.5).ToString("O"),
+                        sessionEnd = DateTime.UtcNow.AddHours(1.0).ToString("O"),
+                        stringState = "running",
+                        dspl = deviceName,
+                        crewID = crewGUID,
+                        zero = 0,           // eventually, thees may be queries
+                        top_percent = 100,  // 
+                        temp = 1,
+                        hmdt = 20,
+                        heartRate = 100,
+                        runtimeSeconds = 10.0,
+                        distanceSinceGoal = 1.0,
+                        coll = 1,
+                        aggColl = 2,
+                        timeToShot = 1,
+                        timeToHit = 1,
+                        timeToKill = 1,
+                        timeToDied = 1,
+                        shot = 1,
+                        aggShot = 2
+                    };
 
-                var newGuid = Guid.NewGuid();
+                    if ((count % 55) == 0)
+                    {
+                        theSession = Guid.NewGuid();
+                    }
 
-                var newEventData = new VehicleData
-                {
-                    collision = 0,
-                    deathCount = 0,
-                    distance = 1.0,
-                    hitCount = 4,
-                    killCount = 2,
-                    positionX = 1000.0,
-                    positionZ = 1200.0,
-                    recordID = "a record Id here",
-                    recordType = "scoring",
-                    roundCount = 10,
-                    sessionID = newGuid,
-                    speed = 5.0,
-                    time = DateTime.UtcNow,
-                    vehicleID = "REDONE",
-                    utcTime = DateTime.UtcNow.ToString("O")
-                };
+                    var timeNow = DateTime.UtcNow;
+                    var sTimeNow = timeNow.ToString();
+                    var newEventData = new VehicleData
+                    {
+                        collision = 1,
+                        deathCount = 0,
+                        distance = 1.0,
+                        hitCount = 3,
+                        killCount = 1,
+                        positionX = 1000.0,
+                        positionZ = 1200.0,
+                        recordID = $"RT|{timeNow}",
+                        recordType = "trainingRT",
+                        roundCount = 1,
+                        sessionID = theSession,
+                        speed = 5.0,
+                        time = timeNow,
+                        vehicleID = $"{vehicleNames[vehicleIndex]}",
+                        utcTime = sTimeNow
+                    };
 
-                var req = WebRequest.Create(uri);
-                req.Method = "POST";
-                req.Headers.Add("Authorization", sas);
-                req.ContentType = "application/atom+xml;type=entry;charset=utf-8";
+                    vehicleIndex++;
+                    vehicleIndex %= 4;
 
-                string jsonString = JsonConvert.SerializeObject(newEventData);
-                using (var writer = new StreamWriter(req.GetRequestStream()))
-                {
-                    writer.Write(jsonString);
+                    var req = WebRequest.Create(uri);
+                    req.Method = "POST";
+                    req.Headers.Add("Authorization", sas);
+                    req.ContentType = "application/atom+xml;type=entry;charset=utf-8";
+
+                    string jsonString = JsonConvert.SerializeObject(newEventData);
+                    using (var writer = new StreamWriter(req.GetRequestStream()))
+                    {
+                        writer.Write(jsonString);
+                    }
+
+                    using (var response = req.GetResponse() as HttpWebResponse)
+                    {
+                        Console.WriteLine("Sent message {0} using legacy HttpWebRequest: {1}", count++, jsonString);
+                        Console.WriteLine(" > Response: {0} :: {1}", response.StatusCode, (int)response.StatusCode);
+
+                    }
                 }
 
-                using (var response = req.GetResponse() as HttpWebResponse)
-                {
-                    Console.WriteLine("Sent message {0} using legacy HttpWebRequest: {1}", count++, jsonString);
-                    Console.WriteLine(" > Response: {0} :: {1}", response.StatusCode, (int) response.StatusCode);
-
-                }
-
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
             }
         }
     }
